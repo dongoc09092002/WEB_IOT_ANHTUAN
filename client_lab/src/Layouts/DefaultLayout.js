@@ -8,9 +8,16 @@ function DefaultLayout({ children }) {
         <Link to="/" className="layout_navbar_item">
           <i class="fa-solid fa-house icon_home"></i>
         </Link>
-        <Link to="/camera" className="layout_navbar_item">
-          <i class="fa-solid fa-camera-retro icon_home"></i>
+        <Link to="/attendance" className="layout_navbar_item">
+          <i class="fa-solid fa-clipboard-user icon_home"></i>
         </Link>
+        {getCookie("token") && (
+          <>
+            <Link to="/camera" className="layout_navbar_item">
+              <i class="fa-solid fa-camera-retro icon_home"></i>
+            </Link>
+          </>
+        )}
         {getCookie("token") && (
           <>
             <Link to="/manager" className="layout_navbar_item">

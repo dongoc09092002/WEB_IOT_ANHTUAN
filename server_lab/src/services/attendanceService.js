@@ -1,21 +1,13 @@
 const { Attendances } = require("../models");
 const { Users } = require("../models");
-//config mqtt
-// const mqtt = require("mqtt");
-// let client = mqtt.connect("mqtt://broker.hivemq.com");
-// let response_mqtt_client;
-// client.subscribe("DIEM_DANH_RESPONSE");
-
-// client.on("connect", () => {
-//   console.log("MQTT connected");
-// });
-// client.on("error", (error) => {
-//   console.error("MQTT client error:", error);
-// });
-
+const client = require("../mqtt");
+const moment = require("moment");
+const now = moment();
+const formattedDate = now.format("DD/MM/YYYY");
+client.client.subscribe("time_keeping_res");
 const createAttendance = async (req, res) => {
-  const { userName, userCode, userImage } = req.body;
-  if (!userName || !userCode || !userImage) {
+  const { userCode } = req.body;
+  if (!userCode) {
     return res.json({
       errCode: 1,
       message: "Dont enought information",
@@ -23,24 +15,23 @@ const createAttendance = async (req, res) => {
   }
   try {
     const checkUser = await Users.findOne({
-      where: { userCode: userCode, userName: userName },
+      where: { userCode: userCode },
     });
     if (!checkUser) {
       return res.json({
         errCode: 1,
-        message: "Error,Check the information again",
+        message: "Error,Check the Code again",
       });
     } else {
       // Tạo một promise để đợi phản hồi
       const waitForResponse = new Promise((resolve, reject) => {
-        client.publish("DIEM_DANH", `${userImage}_${userName}_${userCode}`);
-
+        client.client.publish("time_keeping", `${userCode}`);
         setTimeout(() => {
           reject(new Error("Timeout waiting for response"));
-        }, 3000); // Timeout sau 2 giây
+        }, 2000); // Timeout sau 3 giây
 
-        client.on("message", (topic, message) => {
-          if (topic === "DIEM_DANH_RESPONSE") {
+        client.client.on("message", (topic, message) => {
+          if (topic === "time_keeping_res") {
             const response = message.toString();
             resolve(response);
           }
@@ -49,11 +40,24 @@ const createAttendance = async (req, res) => {
 
       try {
         const response = await waitForResponse;
-        return res.json({ message: "Received MQTT response", response });
+        console.log(response);
+        if (response) {
+          console.log(formattedDate);
+           await Attendances.create({
+             Time: formattedDate,
+             UserId: checkUser.id,
+           });
+        }
+        return res.json({
+          message: "Successfully",
+          errCode: 0,
+          data: response,
+        });
       } catch (error) {
         return res.json({
-          message: "No MQTT response within the timeout",
-          error: error.message,
+          errCode: 1,
+          message: "No MQTT response . Please check",
+          data: error.message,
         });
       }
     }
@@ -65,15 +69,49 @@ const createAttendance = async (req, res) => {
     });
   }
 };
-const test = (req, res) => {
-  client.on("connect", () => {
-    client.publish("DIEM_DANH", "DOVANNGOC_20203520ádasdf");
-    while (!response_mqtt_client) {}
-    return res.json(response_mqtt_client);
-  });
-  return res.json("kk");
+const getFullAttendance = async (req, res) => {
+  const { UserId, Time } = req.body;
+  if (!UserId || !Time) {
+    return res.json({
+      errCode: 1,
+      message: "Dont enought information",
+    });
+  }
+  try {
+      const user = await Users.findOne({
+        where: { id: UserId },
+      });
+      const data = await Attendances.findAll({
+        where: {
+          UserId: UserId,
+          Time: Time,
+        },
+        include: [
+          {
+            model: Users,
+            as: "user",
+            attributes: ["userName", "userCode", "userImage"],
+          },
+        ],
+      });
+      return res.json({
+        errCode: 0,
+        message: "get full successfuly",
+        length: data.length,
+        img: user.userImage,
+        code: user.userCode,
+        name : user.userName,
+      });
+    
+  } catch (error) {
+    return res.json({
+      errCode: -1,
+      message: "err server",
+      data: error,
+    });
+  }
 };
 module.exports = {
   createAttendance,
-  test,
+  getFullAttendance,
 };

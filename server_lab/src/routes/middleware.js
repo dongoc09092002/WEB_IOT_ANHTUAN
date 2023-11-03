@@ -3,6 +3,9 @@ const { Admins } = require("../models");
 const middleware = async (req, res, next) => {
   try {
     const token = req.cookies.token;
+    // const token = req.headers.cookie.split("=")[1];
+    // console.log("token : ", req.headers);
+    // console.log("token : ", token);
     if (!token) {
       return res.json({
         errCode: 1,

@@ -6,7 +6,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { URL } from "../../link_server";
 import "./Home.css";
-import { setCookie, getCookie } from "../../cookies";
+import { setCookie, getCookie, deleteAllCookies } from "../../cookies";
 const customStyles = {
   content: {
     top: "50%",
@@ -152,10 +152,18 @@ function Home(props) {
           <img
             style={{ width: "100%" }}
             alt=""
-            src="https://scontent.fhan5-11.fna.fbcdn.net/v/t39.30808-6/395098978_842909694291854_5057374663840811065_n.jpg?_nc_cat=104&ccb=1-7&_nc_sid=5f2048&_nc_ohc=xL8ko4NrjPwAX_4IeI3&_nc_ht=scontent.fhan5-11.fna&oh=00_AfC3XunUIOZsFP9yj5Pz69vrKXXOgQWsBipDmHqaikMHkA&oe=653E080C"
+            src="https://firebasestorage.googleapis.com/v0/b/imagepostcommentlike.appspot.com/o/395098978_842909694291854_5057374663840811065_n.jpg?alt=media&token=199d643c-ec68-46e5-999d-0fed7814ff21&_gl=1*1dkwt4h*_ga*MTg1MjYxMzE0MC4xNjk4MDgxMjIw*_ga_CW55HF8NVT*MTY5ODY4MzEyNS45LjEuMTY5ODY4MzIwMS41Mi4wLjA."
           />
         </div>
-        {getCookie("token") ? <></> : <Register></Register>}
+        {getCookie("token") ? (
+          <>
+            <div className="logout" onClick={deleteAllCookies}>
+              Log Out
+            </div>
+          </>
+        ) : (
+          <Register></Register>
+        )}
       </div>
 
       <Modal

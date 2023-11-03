@@ -168,3 +168,25 @@ input:checked+.slider:before {
 .slider.round:before {
     border-radius: 50%;
 }
+.logout{
+   
+    color: #ccc;
+    background: #005eaa;
+    height: 40px;
+    width: 100px;
+    text-align: center;
+    display: flex;
+   justify-content: center;
+   align-items: center;
+   margin-top: 10px;
+   margin-right: 10px;
+   cursor: pointer;
+   border-radius: 10px;
+   position: absolute;
+   top: 0;
+   right: 0;
+}
+.logout:hover{
+    height: 43px;
+    width: 105px;
+}

@@ -1,18 +1,8 @@
 const { Users } = require("../models");
 
+const client = require("../mqtt");
 
-const mqtt = require("mqtt");
-let client = mqtt.connect("mqtt://broker.hivemq.com");
-
-client.subscribe("new_employee_res");
-
-client.on("connect", () => {
-  console.log("MQTT connected");
-});
-client.on("error", (error) => {
-  console.error("MQTT client error:", error);
-});
-
+client.client.subscribe("new_employee_res");
 
 const createUser = async (req, res) => {
   const { userName, userCode, userImage } = req.body;
@@ -34,12 +24,12 @@ const createUser = async (req, res) => {
     } else {
       // Tạo một promise để đợi phản hồi
       const waitForResponse = new Promise((resolve, reject) => {
-        client.publish("new_employee", `${userImage}`);
+        client.client.publish("new_employee", `${userImage}`);
         setTimeout(() => {
           reject(new Error("Timeout waiting for response"));
-        }, 3000); // Timeout sau 3 giây
+        }, 2000); // Timeout sau 2 giây
 
-        client.on("message", (topic, message) => {
+        client.client.on("message", (topic, message) => {
           if (topic === "new_employee_res") {
             const response = message.toString();
             resolve(response);
@@ -49,38 +39,38 @@ const createUser = async (req, res) => {
 
       try {
         const response = await waitForResponse;
-        if (response){
-            await Users.create({
-              userName,
-              userCode,
-              userImage,
-              AdminId: req.AdminId,
-            });
-        }
-          return res.json({
-            message: "Received response and created new user",
-            response,
-            errCode: 0,
+        if (response) {
+          await Users.create({
+            userName,
+            userCode,
+            userImage,
+            AdminId: req.AdminId,
           });
+        }
+        return res.json({
+          message: "Received response and created new user",
+          data: response,
+          errCode: 0,
+        });
       } catch (error) {
         return res.json({
-          errCode : 1,
+          errCode: 1,
           message: "No MQTT response . Please check",
-          data : error.message,
+          data: error.message,
         });
       }
 
-    //   await Users.create({
-    //     userName,
-    //     userCode,
-    //     userImage,
-    //     AdminId: req.AdminId,
-    //   });
+      //   await Users.create({
+      //     userName,
+      //     userCode,
+      //     userImage,
+      //     AdminId: req.AdminId,
+      //   });
 
-    //   return res.json({
-    //     errCode: 0,
-    //     message: "create user success",
-    //   });
+      //   return res.json({
+      //     errCode: 0,
+      //     message: "create user success",
+      //   });
     }
   } catch (error) {
     return res.json({
@@ -97,22 +87,19 @@ const getFullUser = async (req, res) => {
       where: { AdminId: req.AdminId },
     });
 
-    if(!fulluser){
+    if (!fulluser) {
       return res.json({
-        errCode : 1,
-        message : 'Dont find users',
-        data : []
-      })
-    }else{
+        errCode: 1,
+        message: "Dont find users",
+        data: [],
+      });
+    } else {
       return res.json({
         errCode: 0,
         message: "find success",
         data: fulluser,
       });
     }
-    
-
-
   } catch (error) {
     return res.json({
       errCode: -1,

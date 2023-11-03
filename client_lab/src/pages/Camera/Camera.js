@@ -17,6 +17,7 @@ function Camera() {
     height: 1280,
     facingMode: "user",
   };
+  const [checkSearch , setCheckSearch] = useState(false)
   const [f5, setF5] = useState(false);
   const [fix, setFix] = useState(false);
   const [dataUser, setDataUser] = useState({
@@ -25,8 +26,28 @@ function Camera() {
     userImage: "",
   });
   const [fullUser, setFullUser] = useState([]);
+  const [search, setSearch] = useState("");
+  const [userSearch, setUserSearch] = useState({});
   const [loadding, setLoadding] = useState(false);
   const notify = (data) => toast(`${data}`);
+const handleKeyDown = (event) => {
+  if (event.key === "Enter") {
+    searchData();
+  }
+};
+  const searchData = () => {
+    const abc = fullUser.find((item) => {
+      return item.userCode === search;
+    });
+    if (abc) {
+      setUserSearch(abc);
+      setCheckSearch(true);
+    } else {
+       setCheckSearch(false);
+      return;
+    }
+  };
+
   const handleFixData = () => {
     if (!dataUser.userName) {
       alert("Please enter a name before press fix button");
@@ -44,7 +65,6 @@ function Camera() {
       alert("ĐIỀN ĐỦ THÔNG TIN BẠN ƠI");
       return;
     }
-    console.log("data : ", dataUser);
     const data = {
       userName: dataUser.userName,
       userCode: dataUser.userCode,
@@ -60,6 +80,7 @@ function Camera() {
         if (response.data.errCode === 0) {
           setDataUser({ userName: "", userCode: "", userImage: "" });
           setFix(false);
+          setF5(!f5);
         }
       })
       .catch(function (error) {
@@ -73,17 +94,15 @@ function Camera() {
         withCredentials: true,
       })
       .then(function (response) {
-        console.log("data : ", response);
         if (response.data.data.length > 0) {
           setFullUser([...response.data.data]);
         }
-        console.log("abc : ", fullUser);
-        
       })
       .catch(function (error) {
         console.log(error);
       });
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [f5]);
 
   //box show
   const [showBox, setShowBox] = useState(false);
@@ -127,10 +146,8 @@ function Camera() {
                   const storageRef = ref(storage, `images/${newfileName}`);
                   uploadString(storageRef, linkbase64, "data_url").then(
                     (snapshot) => {
-                      console.log("Uploaded a data_url string!", snapshot);
                       getDownloadURL(storageRef)
                         .then((downloadURL) => {
-                          console.log("File download URL:", downloadURL);
                           setLoadding(false);
                           setDataUser({ ...dataUser, userImage: downloadURL });
                         })
@@ -246,17 +263,48 @@ function Camera() {
               onClick={toggleBox}
             ></i>
             <div className="box_content_header_input">
-              <i class="fa-solid fa-magnifying-glass"></i>
-              <input className="" placeholder="Ex : 20203520" />
+              <i
+                class="fa-solid fa-magnifying-glass"
+                style={{ padding: "0px 10px", fontSize: "22px" }}
+                onClick={searchData}
+              ></i>
+              <input
+                className=""
+                value={search}
+                placeholder="Ex : 20203520"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                }}
+                onKeyDown={handleKeyDown}
+              />
+
+              {userSearch && checkSearch && (
+                <div className="box_search">
+                  <Boxuser
+                    key={userSearch.id}
+                    check={true}
+                    infor={userSearch}
+                  />
+                  <div
+                    className="box_search_close"
+                    onClick={() => {
+                      setSearch("");
+                      setCheckSearch(false);
+                    }}
+                  >
+                    <i class="fa-solid fa-xmark"></i>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="box_content_body">
-            {fullUser && fullUser.length > 0 && fullUser.map((item,index)=>{
-              console.log(item);
-              return <Boxuser key={index} check={true} infor={item}/>;
-            })}
-           
+            {fullUser &&
+              fullUser.length > 0 &&
+              fullUser.map((item, index) => {
+                return <Boxuser key={index} check={true} infor={item} />;
+              })}
           </div>
         </div>
       </div>
